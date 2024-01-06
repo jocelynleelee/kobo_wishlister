@@ -1,0 +1,122 @@
+<!-- templates/wishlist.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Other head elements -->
+
+    <!-- Chart.js -->
+    <style>
+        #wishlist-table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+        }
+
+        #wishlist-table th, #wishlist-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #wishlist-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+</head>
+<body>
+    <div id="user-info">
+        <p>Welcome, {{ current_user.username }}! <a href="{{ url_for('logout') }}">Logout</a></p>
+    </div>
+    <p><a href="{{ url_for('index') }}">Back to Home</a></p>
+    <h1>Your Wishlist</h1>
+
+    <table id="wishlist-table">
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for title, data in grouped_data.items() %}
+                <tr class="wishlist-row" data-title="{{ title }}">
+                    <td>{{ title }}</td>
+                    <!-- Add more columns as needed -->
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Container for displaying the chart -->
+    <div id="chart-container" style="display: none; position: relative; height: 40vh; width: 80vw;">
+        <canvas id="wishlist-chart"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click event listeners to each row
+            var grouped_data = {{ grouped_data | tojson }};
+            var rows = document.getElementsByClassName('wishlist-row');
+            for (var i = 0; i < rows.length; i++) {
+                rows[i].addEventListener('click', function() {
+                    var title = this.getAttribute('data-title');
+                    var data = grouped_data[title];
+
+                    // Display the chart container
+                    document.getElementById('chart-container').style.display = 'block';
+
+                    // Generate chart for the clicked row
+                    generateChart(title, data);
+                });
+            }
+        });
+
+        function generateChart(title, data) {
+            var timestamps = data['timestamps'];
+            var prices = data['prices'];
+
+            var ctx = document.getElementById('wishlist-chart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Price',
+                        data: prices,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'YYYY-MM-DD HH:mm:ss',
+                                displayFormats: {
+                                    day: 'MMM DD'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: title,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+    
+</body>
+</html>
