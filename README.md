@@ -26,6 +26,14 @@ create a wishlist for books found in Kobo (TW)
     -  distributed systems: run across multiple servers or containers
     -  error handling
     -  integration: with message brokers (e.g. RabbitMQ, Redis(current choice), with result backends (e.g. redis or databases), or analytic tools
+   
+* Redis in celery: serves as the message broker
+     - load balancing between celery workers
+     - decoupling between adding tasks and executing tasks
+     - task queuing: tasks are stored in a queue before being consumed by the celery workers
+     - tasks survive even upon application restart or a worker goes down
+     - microservices can use message broker to communicate asynchronously through task messages.
+     - scalable by increasing the number of workers (horizontal scalability)
     
   
 
