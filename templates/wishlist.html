@@ -6,6 +6,31 @@
 
     <!-- Chart.js -->
     <style>
+        h1 {
+            text-align: center;
+            margin-top: 50px; /* Adjust as needed */
+            
+        }
+        body {
+            text-align: center; /* Center-align the entire content */
+        }
+        #title-container {
+            width: 100%; /* Set the desired width */
+            margin: 0 auto; /* Center the container horizontally */
+            background-color: #92bc83;
+
+            /* padding: 10px; */
+            /* Add additional styling as needed */
+            
+        }
+        #title-container h1{
+            color: #030606;
+        }
+        #wishlist-container {
+            display: relative;
+            /* flex-direction: column;
+            align-items: flex-start; */
+        }
         #wishlist-table {
             border-collapse: collapse;
             width: 80%;
@@ -15,45 +40,81 @@
         #wishlist-table th, #wishlist-table td {
             border: 1px solid #ddd;
             padding: 8px;
-            text-align: left;
+            text-align: center;
         }
 
         #wishlist-table th {
-            background-color: #f2f2f2;
+            background-color: #92bc83;
+        }
+        .wishlist-row:hover .book-id {
+            display: inline; /* Show book id on hover */
+        }
+
+        .book-id {
+            display: none; /* Initially hide book id */
+            font-style: italic; /* Optionally, apply italic style */
+            color: #666; /* Optionally, apply a different color */
+            margin-left: 5px; /* Optionally, adjust margin as needed */
+        }
+        #add-book-button {
+            text-align: right;
+            /* vertical-align: bottom; */
+        }
+        #add-book-button button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #user-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            text-align: right;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+    <title>Book Price Tracker</title>
 </head>
 <body>
+    <header>
+        <!-- <img src="https://static.kobo.com/1.0.1.3855/Images/transparent.gif" alt="Your Logo"> -->
+        <div id="title-container">
+            <h1 id="main-title">Book Price Tracker</h1>
+        </div>
+    </header>
     <div id="user-info">
         <p>Welcome, {{ current_user.username }}! <a href="{{ url_for('logout') }}">Logout</a></p>
     </div>
-    <p><a href="{{ url_for('index') }}">Back to Home</a></p>
     <h1>Your Wishlist</h1>
-
-    <table id="wishlist-table">
-        <thead>
-            <tr>
-                <th>Book Title</th>
-                <!-- Add more columns as needed -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for title, data in grouped_data.items() %}
-                <tr class="wishlist-row" data-title="{{ title }}">
-                    <td>{{ title }}</td>
+    <div id="wishlist-container"></div>
+        <table id="wishlist-table">
+            <thead>
+                <tr>
+                    <th>Book Title</th>
                     <!-- Add more columns as needed -->
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+            </thead>
+            <tbody>
+                {% for title, data in grouped_data.items() %}
+                    <tr class="wishlist-row" data-title="{{ title }}">
+                        <td>{{ title }}
+                            <span class="book-id">{{ data.id }}</span>
+                        </td>
+                        <!-- Add more columns as needed -->
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>  
     <!-- Container for displaying the chart -->
     <div id="chart-container" style="display: none; position: relative; height: 40vh; width: 80vw;">
         <canvas id="wishlist-chart"></canvas>
     </div>
 
     <script>
+        document.getElementById('main-title').addEventListener('click', function() {
+            // Handle navigation here
+            window.location.href = 'wishlist';
+        });
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event listeners to each row
             var grouped_data = {{ grouped_data | tojson }};
@@ -116,7 +177,11 @@
             });
         }
     </script>
-
+    <div id="add-book-button">
+        <!-- <button type="submit">add more books</button> -->
+        <a href="{{ url_for('add_book') }}" class="styled-button">Add More Book</a>
+        <!-- <p><a href="{{ url_for('add_book') }}">add more books</a></p> -->
+    </div>
     
 </body>
 </html>
