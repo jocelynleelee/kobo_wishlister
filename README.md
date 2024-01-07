@@ -15,8 +15,19 @@ create a wishlist for books found in Kobo (TW)
 
 
 - modules used:
-  * flask
-  * SQLAlchemy
+  * flask: provides the foundation and manipulation of the web application
+  * SQLAlchemy: provides the foundation and manipulation of the wishlist database
+  * Celery:
+    - execute time-consuming and resource-intensive tasks asynchronously (e.g. crawling websites)
+    -  perodic tasks: updating prices, sending notifications
+    -  parallel process: workload can be distributed to worker proccesses, enabling parallel processing
+    -  apply_async (run after `countdown` passes and delay (run right away)
+    -  task chaining: tasks in celery can be chained together allowing you to create workflows where a task servers as the input for another.
+    -  distributed systems: run across multiple servers or containers
+    -  error handling
+    -  integration: with message brokers (e.g. RabbitMQ, Redis(current choice), with result backends (e.g. redis or databases), or analytic tools
+    
+  
 
 
 
