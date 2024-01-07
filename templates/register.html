@@ -4,9 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <style>
+        /* h1 {
+            text-align: center;
+            margin-top: 50px; 
+        } */
+        body {
+            text-align: center; /* Center-align the entire content */
+        }
+        #title-container {
+            width: 100%; /* Set the desired width */
+            margin: 0 auto; /* Center the container horizontally */
+            background-color: #92bc83;
+            /* padding: 10px; */
+            /* Add additional styling as needed */
+        }
+        #title-container h1{
+            color: #030606;
+        }
+        #submit-form {
+            text-align: center;   
+            margin: 10px 0; /* 10 pixels margin at the top and bottom */
+            padding: 15px; /* 15 pixels padding on all sides */
+            line-height: 2; /* 1.5 times the font size */  
+        }
+    </style>
+    <title>Book Price Tracker</title>
 </head>
 <body>
+    <header>
+        <!-- <img src="https://static.kobo.com/1.0.1.3855/Images/transparent.gif" alt="Your Logo"> -->
+        <div id="title-container">
+            <h1 id="main-title">Book Price Tracker</h1>
+        </div>
+    </header>
     <h1>Register</h1>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -17,13 +48,21 @@
             </ul>
         {% endif %}
     {% endwith %}
-    <form method="POST" action="{{ url_for('register') }}">
-        {{ form.hidden_tag() }}
-        {{ form.username.label }} {{ form.username(size=20) }}<br>
-        {{ form.password.label }} {{ form.password(size=20) }}<br>
-        {{ form.confirm_password.label }} {{ form.confirm_password(size=20) }}<br>
-        {{ form.submit() }}
-    </form>
-    <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
-</body>
+    <div id="submit-form">
+        <form method="POST" action="{{ url_for('register') }}">
+            {{ form.hidden_tag() }}
+            {{ form.username.label }} {{ form.username(size=20) }}<br>
+            {{ form.password.label }} {{ form.password(size=20) }}<br>
+            {{ form.confirm_password.label }} {{ form.confirm_password(size=20) }}<br>
+            {{ form.submit() }}
+        </form>
+        <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+    </div>
+    <script>
+        document.getElementById('main-title').addEventListener('click', function() {
+            // Handle navigation here
+            window.location.href = '/';
+        });
+    </script>
+    </body>
 </html>
