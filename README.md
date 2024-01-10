@@ -12,6 +12,10 @@ create a wishlist for books found in Kobo (TW)
   * submit_task(book_id)
   * update_wishlist()
   * get_wishlist()
+- extra features:
+  * email notification for price drops
+  * best seller page which allows users to add to their wishlist
+  * multiple wishlists for each user (?)
 
 
 - modules used:
