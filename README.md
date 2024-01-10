@@ -1,4 +1,4 @@
-# discount_alert
+# kobo wishlister
 create a wishlist for books found in Kobo (TW)
 
 - GUI:
