@@ -6,10 +6,11 @@ from . import main
 from .models.user import User
 from .models.book import Book
 from functools import wraps
+from flask_mail import Message
 from .models.registration_form import RegistrationForm
 from .models.login_form import LoginForm
 from .tasks import create_book
-from app import db, bcrypt, cache
+from app import db, bcrypt, cache, mail
 
 
 def generate_api_key():
@@ -31,7 +32,8 @@ def register():
         user = User(
             username=form.username.data,
             password=hashed_password,
-            api_key=generate_api_key())
+            api_key=generate_api_key(),
+            email=form.email.data)
         db.session.add(user)
         db.session.commit()
         flash('Your account has been created! You can now log in.', 'success')
@@ -57,6 +59,7 @@ def login():
 def wishlist():
     books = Book.query.filter_by(user_id=current_user.id).all()
 
+    
     grouped_data = {}
     for book in books:
         if book.title not in grouped_data:
@@ -67,7 +70,7 @@ def wishlist():
             }
         grouped_data[book.title]['timestamps'].append(book.timestamp)
         grouped_data[book.title]['prices'].append(book.price)
-
+        grouped_data[book.title]["image_url"] = book.book_image
     return render_template('wishlist.html', grouped_data=grouped_data)
 
 @main.route('/logout')
@@ -99,6 +102,7 @@ def add_book_login():
             book_id=this_book["id"], 
             price=this_book["price"], 
             timestamp=this_book["timestamp"],
+            book_image=this_book["image"],
             user_id=current_user.id)
         try:
             db.session.add(new_book)
@@ -191,3 +195,26 @@ def update_wishlist_api_key():
                 db.session.rollback()
                 continue   
     return added_books
+
+
+@main.route("/send_mail")
+def send_price_drop_mail():
+    mail_message = Message(
+        'Hi ! Don’t forget to follow me for more article!', 
+        sender =   'jasmin2067@gmail.com', 
+        recipients = ['jasmin2067@gmail.com'])
+    mail_message.body = "This is a test"
+    mail.send(mail_message)
+    return "Mail has sent"
+    # subject = 'Book Price Drop Notification'
+    # recipients = [user_email]
+    
+    # # Customize the email body as needed
+    # body = render_template(
+    #     'email/price_drop_notification.html', 
+    #     book_title=book_title, 
+    #     new_price=new_price)
+
+    # message = Message(subject=subject, recipients=recipients, html=body)
+    # mail.send(message)
+

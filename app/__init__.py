@@ -1,11 +1,12 @@
 # app/__init__.py
-
+import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
-from wishlister import WishList
+from flask_mail import Mail
 from flask_caching import Cache
+from wishlister import WishList
 from celery import Celery
 
 def create_app() -> Flask:
@@ -14,10 +15,16 @@ def create_app() -> Flask:
     app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
     app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
     app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_USERNAME'] = 'jasmin2067@gmail.com'
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     return app
 
 app = create_app()
-
+mail = Mail(app)
 celery_app = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery_app.conf.update(app.config)
 db = SQLAlchemy(app)
