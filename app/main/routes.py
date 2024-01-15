@@ -1,7 +1,7 @@
 # app/main/routes.py
 import secrets
 from flask import render_template, flash, redirect, url_for, request, jsonify
-from flask_login import login_required, current_user, logout_user
+from flask_login import login_required, current_user, logout_user, login_user
 from . import main
 from .models.user import User
 from .models.book import Book
