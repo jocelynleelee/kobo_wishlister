@@ -26,6 +26,12 @@ class PriceTracker(object):
         headers = {'API-Key': "hqqBQxYVvlNFCk3wdJMu9A"}
         response = requests.post(endpoint, headers=headers)
         return response.json()
+    
+    def send_email(self):
+        endpoint = f'{self.base_url}/send_mail'
+        # headers = {'API-Key': "hqqBQxYVvlNFCk3wdJMu9A"}
+        requests.post(endpoint)
+        # return response.json()
 
 def main():
     pass
@@ -34,5 +40,5 @@ if __name__ == "__main__":
     price_tracker = PriceTracker()
     # Example: Call the submit_task function
     # result = price_tracker.submit_task('oTVIfBe3GzCvpD3PJkTxNw')
-    wishlist = price_tracker.update_wishlist()
+    wishlist = price_tracker.send_email()
     print(wishlist)

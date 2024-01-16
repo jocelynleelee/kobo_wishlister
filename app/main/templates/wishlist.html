@@ -90,6 +90,7 @@
             <thead>
                 <tr>
                     <th>Book Title</th>
+                    <th>Book Image</th>
                     <!-- Add more columns as needed -->
                 </tr>
             </thead>
@@ -98,6 +99,13 @@
                     <tr class="wishlist-row" data-title="{{ title }}">
                         <td>{{ title }}
                             <span class="book-id">{{ data.id }}</span>
+                        </td>
+                        <td>
+                            {% if 'image_url' in data %}
+                                <img src="{{ data.image_url }}" alt="{{ title }}" style="max-width: 100px;">
+                            {% else %}
+                                No Image Available
+                            {% endif %}
                         </td>
                         <!-- Add more columns as needed -->
                     </tr>

@@ -23,6 +23,7 @@ class WishList(object):
                 soup = BeautifulSoup(response.text, 'html.parser')
                 book_title = soup.find("h1", "title product-field").text.strip()
                 book_price = soup.find('meta', {'property': 'og:price'})["content"]
+                book_image = soup.find('meta', {'property': 'og:image'})["content"]
                 timestamp = datetime.now().strftime("%m/%d/%Y")
     
     def add(self, book_id):
@@ -35,8 +36,10 @@ class WishList(object):
         soup = BeautifulSoup(response.text, 'html.parser')
         book_title = soup.find("h1", "title product-field").text.strip()
         book_price = soup.find('meta', {'property': 'og:price'})["content"]
+        book_image = soup.find('meta', {'property': 'og:image'})["content"]
         timestamp = datetime.now()
-        book = {"title": book_title, 
+        book = {"title": book_title,
+                "image": book_image,
                 "price": book_price, 
                 "timestamp": timestamp,
                 "id": book_id}

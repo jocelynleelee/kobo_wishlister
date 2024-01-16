@@ -6,10 +6,12 @@ from . import main
 from .models.user import User
 from .models.book import Book
 from functools import wraps
+from flask_mail import Message
 from .models.registration_form import RegistrationForm
 from .models.login_form import LoginForm
 from .tasks import create_book
-from app import db, bcrypt, cache
+from app import db, bcrypt, cache, mail
+from sqlalchemy import desc, func
 
 
 def generate_api_key():
@@ -31,7 +33,8 @@ def register():
         user = User(
             username=form.username.data,
             password=hashed_password,
-            api_key=generate_api_key())
+            api_key=generate_api_key(),
+            email=form.email.data)
         db.session.add(user)
         db.session.commit()
         flash('Your account has been created! You can now log in.', 'success')
@@ -56,7 +59,6 @@ def login():
 @login_required
 def wishlist():
     books = Book.query.filter_by(user_id=current_user.id).all()
-
     grouped_data = {}
     for book in books:
         if book.title not in grouped_data:
@@ -67,7 +69,8 @@ def wishlist():
             }
         grouped_data[book.title]['timestamps'].append(book.timestamp)
         grouped_data[book.title]['prices'].append(book.price)
-
+        if not grouped_data[book.title].get("image_url"):
+            grouped_data[book.title]["image_url"] = book.book_image
     return render_template('wishlist.html', grouped_data=grouped_data)
 
 @main.route('/logout')
@@ -99,6 +102,7 @@ def add_book_login():
             book_id=this_book["id"], 
             price=this_book["price"], 
             timestamp=this_book["timestamp"],
+            book_image=this_book["image"],
             user_id=current_user.id)
         try:
             db.session.add(new_book)
@@ -181,6 +185,7 @@ def update_wishlist_api_key():
             book_id=new_book["id"], 
             price=new_book["price"], 
             timestamp=new_book["timestamp"],
+            book_image=new_book["image"],
             user_id=current_user_id)
             try:
                 db.session.add(new_book)
@@ -191,3 +196,86 @@ def update_wishlist_api_key():
                 db.session.rollback()
                 continue   
     return added_books
+
+
+@main.route("/send_mail", methods=['POST'])
+def send_price_drop_mail():
+    # get all users from the db
+    users = User.query.all()
+    subject = 'Book Price Drop Notification'
+
+    # update the wishlist first
+    for user in users:
+        update_wishlist(user)
+        books = Book.query.filter_by(user_id=user.id).all()
+        on_sale_books = []
+        processed = []
+        recipient = user.email
+        username = user.username
+        for book in books:
+            if book.title in processed:
+                continue
+        # check the latest 2 prices to get the recipients
+            processed.append(book.title)
+            latest_prices = Book.query.filter_by(
+                title=book.title).order_by(desc(Book.timestamp)).limit(2).all()
+            if len(latest_prices) >= 2:
+                latest_price = latest_prices[0].price
+                second_last_price = latest_prices[1].price
+                # if latest_price < second_last_price: # comment this out for testing
+                on_sale_books.append((book, latest_price, second_last_price))
+
+        if on_sale_books:
+            body = render_template('price_drop_notification.html', 
+                                user=username,
+                                on_sale_books=on_sale_books)
+
+            mail_message = Message(subject,
+                              sender="jasmin2067@gmail.com",
+                              recipients=[recipient],
+                              html=body)
+            mail.send(mail_message)
+
+def update_wishlist(user):
+    books = get_unique_books_for_user(user.id)
+    for book in books:
+        book_id = book[0]
+        new_book = create_book(user.id, str(book_id))
+        if not isinstance(new_book, dict):
+            continue
+        new_book = Book(
+        title=new_book["title"], 
+        book_id=new_book["id"], 
+        price=new_book["price"], 
+        timestamp=new_book["timestamp"],
+        book_image=new_book["image"],
+        user_id=user.id)
+        try:
+            db.session.add(new_book)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            continue 
+
+def get_unique_books_for_user(this_user_id):
+    # Query to get unique books based on their titles for a specific user
+
+    try:
+        unique_books = (
+            Book.query
+            .filter_by(user_id=this_user_id)
+            .with_entities(
+                Book.book_id,
+                Book.title,
+                func.max(Book.timestamp).label('latest_timestamp'),
+                func.max(Book.price).label('latest_price'),
+                func.max(Book.book_image).label('latest_image_url')
+            )
+            .group_by(Book.title)
+            .all()
+        )
+        return unique_books
+    except Exception as e:
+        print(f"Error fetching unique books: {str(e)}")
+        return None
+    
