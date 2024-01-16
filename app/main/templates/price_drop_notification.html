@@ -1,0 +1,39 @@
+<!-- price_drop.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Your head elements -->
+    <title>Price Drop</title>
+</head>
+<body>
+    <h1>Price Drop Notification</h1>
+    <p>Hi, jocelyn!</p>
+    <p>Here is a list of books that are on sale:</p>
+
+    {% if on_sale_books %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>New Price</th>
+                    <th>Old Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book, new_price, old_price in on_sale_books %}
+                    <tr>
+                        <td>
+                            <img src="{{ book.book_image }}" alt="{{ book.title }} Image" style="width: 100px; height: auto;">
+                        </td>
+                        <td>{{ book.title }}</td>
+                        <td>{{ new_price }}</td>
+                        <td><s>{{ old_price }}</s></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html>

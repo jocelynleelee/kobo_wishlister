@@ -1,5 +1,6 @@
 # app/main/routes.py
 import secrets
+import random
 from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user, logout_user, login_user
 from . import main
@@ -10,7 +11,7 @@ from flask_mail import Message
 from .models.registration_form import RegistrationForm
 from .models.login_form import LoginForm
 from .tasks import create_book
-from app import db, bcrypt, cache, mail
+from app import db, bcrypt, cache, mail, celery_app
 from sqlalchemy import desc, func
 
 
@@ -93,7 +94,9 @@ def add_book():
 def add_book_login():
     if request.method == 'POST':
         book_id = request.form['book_id']
-        this_book = create_book(current_user, book_id)
+        new_book_result = create_book.apply_async(
+            args=[book_id], countdown=1)
+        this_book = new_book_result.get()
         if not isinstance(this_book, dict):
             flash('Book id doesn\'t seem to exist.')
             return render_template('index.html')
@@ -151,7 +154,10 @@ def get_user_by_api_key(api_key):
 def add_book_api_key():
     user = request.user
     form_data = request.values
-    return create_book(user, form_data["book_id"])
+    new_book_result = create_book.apply_async(
+            args=[form_data["book_id"]], countdown=1)
+    new_book = new_book_result.get()
+    return new_book
 
 @main.route('/api/get_wishlist', methods=['POST'])
 @api_key_required
@@ -178,7 +184,9 @@ def update_wishlist_api_key():
     books = get_wishlist_api_key()
     added_books = {}
     for book in books:
-        new_book = create_book(current_user_id, str(books[book]["book_id"]))
+        new_book_result = create_book.apply_async(
+            args=[str(books[book]["book_id"])], countdown=1)
+        new_book = new_book_result.get()
         if isinstance(new_book, dict):
             new_book = Book(
             title=new_book["title"], 
@@ -236,11 +244,17 @@ def send_price_drop_mail():
                               html=body)
             mail.send(mail_message)
 
+@main.route("/update_wishlist", methods=['POST'])
 def update_wishlist(user):
     books = get_unique_books_for_user(user.id)
     for book in books:
         book_id = book[0]
-        new_book = create_book(user.id, str(book_id))
+        try:
+            new_book_result = create_book.apply_async(
+                args=[book_id], countdown=1)
+            new_book = new_book_result.get()
+        except Exception as e:
+            print(str(e))
         if not isinstance(new_book, dict):
             continue
         new_book = Book(
@@ -278,4 +292,3 @@ def get_unique_books_for_user(this_user_id):
     except Exception as e:
         print(f"Error fetching unique books: {str(e)}")
         return None
-    

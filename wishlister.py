@@ -29,7 +29,7 @@ class WishList(object):
     def add(self, book_id):
         book_url = KOBO_URL + book_id
         response = requests.get(book_url, headers)
-        time.sleep(5)
+        # time.sleep(5)
         if response.status_code != 200:
             print(f"Error: {response.status_code}")
             return None
