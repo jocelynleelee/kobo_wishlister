@@ -11,6 +11,7 @@ from .models.registration_form import RegistrationForm
 from .models.login_form import LoginForm
 from .tasks import create_book
 from app import db, bcrypt, cache, mail
+from sqlalchemy import desc, func
 
 
 def generate_api_key():
@@ -58,8 +59,6 @@ def login():
 @login_required
 def wishlist():
     books = Book.query.filter_by(user_id=current_user.id).all()
-
-    
     grouped_data = {}
     for book in books:
         if book.title not in grouped_data:
@@ -70,7 +69,8 @@ def wishlist():
             }
         grouped_data[book.title]['timestamps'].append(book.timestamp)
         grouped_data[book.title]['prices'].append(book.price)
-        grouped_data[book.title]["image_url"] = book.book_image
+        if not grouped_data[book.title].get("image_url"):
+            grouped_data[book.title]["image_url"] = book.book_image
     return render_template('wishlist.html', grouped_data=grouped_data)
 
 @main.route('/logout')
@@ -185,6 +185,7 @@ def update_wishlist_api_key():
             book_id=new_book["id"], 
             price=new_book["price"], 
             timestamp=new_book["timestamp"],
+            book_image=new_book["image"],
             user_id=current_user_id)
             try:
                 db.session.add(new_book)
@@ -197,24 +198,84 @@ def update_wishlist_api_key():
     return added_books
 
 
-@main.route("/send_mail")
+@main.route("/send_mail", methods=['POST'])
 def send_price_drop_mail():
-    mail_message = Message(
-        'Hi ! Don’t forget to follow me for more article!', 
-        sender =   'jasmin2067@gmail.com', 
-        recipients = ['jasmin2067@gmail.com'])
-    mail_message.body = "This is a test"
-    mail.send(mail_message)
-    return "Mail has sent"
-    # subject = 'Book Price Drop Notification'
-    # recipients = [user_email]
+    # get all users from the db
+    users = User.query.all()
+    subject = 'Book Price Drop Notification'
+
+    # update the wishlist first
+    for user in users:
+        update_wishlist(user)
+        books = Book.query.filter_by(user_id=user.id).all()
+        on_sale_books = []
+        processed = []
+        recipient = user.email
+        username = user.username
+        for book in books:
+            if book.title in processed:
+                continue
+        # check the latest 2 prices to get the recipients
+            processed.append(book.title)
+            latest_prices = Book.query.filter_by(
+                title=book.title).order_by(desc(Book.timestamp)).limit(2).all()
+            if len(latest_prices) >= 2:
+                latest_price = latest_prices[0].price
+                second_last_price = latest_prices[1].price
+                # if latest_price < second_last_price: # comment this out for testing
+                on_sale_books.append((book, latest_price, second_last_price))
+
+        if on_sale_books:
+            body = render_template('price_drop_notification.html', 
+                                user=username,
+                                on_sale_books=on_sale_books)
+
+            mail_message = Message(subject,
+                              sender="jasmin2067@gmail.com",
+                              recipients=[recipient],
+                              html=body)
+            mail.send(mail_message)
+
+def update_wishlist(user):
+    books = get_unique_books_for_user(user.id)
+    for book in books:
+        book_id = book[0]
+        new_book = create_book(user.id, str(book_id))
+        if not isinstance(new_book, dict):
+            continue
+        new_book = Book(
+        title=new_book["title"], 
+        book_id=new_book["id"], 
+        price=new_book["price"], 
+        timestamp=new_book["timestamp"],
+        book_image=new_book["image"],
+        user_id=user.id)
+        try:
+            db.session.add(new_book)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            continue 
+
+def get_unique_books_for_user(this_user_id):
+    # Query to get unique books based on their titles for a specific user
+
+    try:
+        unique_books = (
+            Book.query
+            .filter_by(user_id=this_user_id)
+            .with_entities(
+                Book.book_id,
+                Book.title,
+                func.max(Book.timestamp).label('latest_timestamp'),
+                func.max(Book.price).label('latest_price'),
+                func.max(Book.book_image).label('latest_image_url')
+            )
+            .group_by(Book.title)
+            .all()
+        )
+        return unique_books
+    except Exception as e:
+        print(f"Error fetching unique books: {str(e)}")
+        return None
     
-    # # Customize the email body as needed
-    # body = render_template(
-    #     'email/price_drop_notification.html', 
-    #     book_title=book_title, 
-    #     new_price=new_price)
-
-    # message = Message(subject=subject, recipients=recipients, html=body)
-    # mail.send(message)
-
